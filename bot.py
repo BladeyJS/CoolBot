@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 import os
 from dotenv import load_dotenv
 import aiohttp
@@ -10,9 +11,9 @@ TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
-client = discord.Client(intents=intents)
 
-# Function to call AI
+bot = commands.Bot(command_prefix=commands.when_mentioned, intents=intents)
+
 async def get_ai_response(message):
     async with aiohttp.ClientSession() as session:
         headers = {
@@ -20,9 +21,9 @@ async def get_ai_response(message):
             "Content-Type": "application/json"
         }
         json_data = {
-            "model": "meta-llama/Llama-3-8b-chat-hf",  # Choose another Together.ai model if you want
+            "model": "meta-llama/Llama-3-8b-chat-hf",
             "messages": [
-                {"role": "system", "content": "You are Coolbot, a helpful, chill AI assistant. your also cool and friendly."},
+                {"role": "system", "content": "You are Coolbot, a helpful, chill AI assistant. You're also cool and friendly."},
                 {"role": "user", "content": message}
             ]
         }
@@ -33,18 +34,14 @@ async def get_ai_response(message):
             except:
                 return "Oops, I couldn't think of anything to say."
 
-@client.event
+@bot.event
 async def on_ready():
-    print(f"We are live as {client.user}!")
+    print(f"We are live as {bot.user}!")
 
-@client.event
-async def on_message(message):
-    if message.author.bot:
-        return
+@bot.command(name="coolbot")
+async def coolbot_command(ctx, *, prompt: str):
+    response = await get_ai_response(prompt)
+    await ctx.send(response)
 
-    if message.content.startswith("!coolbot"):
-        prompt = message.content[len("!coolbot "):]
-        response = await get_ai_response(prompt)
-        await message.channel.send(response)
+bot.run(DISCORD_TOKEN)
 
-client.run(DISCORD_TOKEN)
