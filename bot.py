@@ -46,16 +46,25 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    # Check if the message starts with @Coolbot
-    if message.content.startswith(client.user.mention):
-        # Remove the bot mention from the message
-        prompt = message.content.replace(client.user.mention, "").strip()
+    # Check if user mentioned the bot
+    mentioned = message.content.startswith(client.user.mention)
+
+    # Check if the message is a reply to a bot message
+    is_reply = (
+        message.reference is not None and
+        isinstance(message.reference.resolved, discord.Message) and
+        message.reference.resolved.author == client.user
+    )
+
+    # Trigger if either mentioned or replied
+    if mentioned or is_reply:
+        prompt = message.content.replace(client.user.mention, "").strip() if mentioned else message.content.strip()
 
         if prompt:
             response = await get_ai_response(prompt)
             await message.channel.send(response)
         else:
-            await message.channel.send("Hi! Mention me followed by your message so I can respond.")
+            await message.channel.send("Hi! Send a message with your question or prompt so I can respond.")
 
 # Run the bot
 client.run(DISCORD_TOKEN)
