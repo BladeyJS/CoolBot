@@ -1,19 +1,20 @@
 import discord
-from discord.ext import commands
 import os
 from dotenv import load_dotenv
 import aiohttp
 
+# Load environment variables
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
 
+# Set up Discord client with intents
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
+client = discord.Client(intents=intents)
 
-bot = commands.Bot(command_prefix=commands.when_mentioned, intents=intents)
-
+# Function to call Together AI
 async def get_ai_response(message):
     async with aiohttp.ClientSession() as session:
         headers = {
@@ -34,14 +35,28 @@ async def get_ai_response(message):
             except:
                 return "Oops, I couldn't think of anything to say."
 
-@bot.event
+# Event when bot is ready
+@client.event
 async def on_ready():
-    print(f"We are live as {bot.user}!")
+    print(f"We are live as {client.user}!")
 
-@bot.command(name="coolbot")
-async def coolbot_command(ctx, *, prompt: str):
-    response = await get_ai_response(prompt)
-    await ctx.send(response)
+# Event for message handling
+@client.event
+async def on_message(message):
+    if message.author.bot:
+        return
 
-bot.run(DISCORD_TOKEN)
+    # Check if the message starts with @Coolbot
+    if message.content.startswith(client.user.mention):
+        # Remove the bot mention from the message
+        prompt = message.content.replace(client.user.mention, "").strip()
+
+        if prompt:
+            response = await get_ai_response(prompt)
+            await message.channel.send(response)
+        else:
+            await message.channel.send("Hi! Mention me followed by your message so I can respond.")
+
+# Run the bot
+client.run(DISCORD_TOKEN)
 
